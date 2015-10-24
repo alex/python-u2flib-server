@@ -25,10 +25,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
 from u2flib_server.attestation.metadata import MetadataProvider
 from u2flib_server.attestation.resolvers import create_resolver
 from u2flib_server.attestation.data import YUBICO
-from M2Crypto import X509
 import json
 import unittest
 
@@ -50,14 +52,18 @@ class AttestationTest(unittest.TestCase):
 
     def test_resolver(self):
         resolver = create_resolver(YUBICO)
-        cert = X509.load_cert_der_string(ATTESTATION_CERT)
+        cert = x509.load_der_x509_certificate(
+            ATTESTATION_CERT, backend=default_backend()
+        )
 
         metadata = resolver.resolve(cert)
         assert metadata.identifier == '2fb54029-7613-4f1d-94f1-fb876c14a6fe'
 
     def test_provider(self):
         provider = MetadataProvider()
-        cert = X509.load_cert_der_string(ATTESTATION_CERT)
+        cert = x509.load_der_x509_certificate(
+            ATTESTATION_CERT, backend=default_backend()
+        )
         attestation = provider.get_attestation(cert)
 
         assert attestation.trusted
@@ -70,7 +76,9 @@ class AttestationTest(unittest.TestCase):
 
         resolver.add_metadata(newer)
 
-        cert = X509.load_cert_der_string(ATTESTATION_CERT)
+        cert = x509.load_der_x509_certificate(
+            ATTESTATION_CERT, backend=default_backend()
+        )
         metadata = resolver.resolve(cert)
 
         assert metadata is None
@@ -82,7 +90,9 @@ class AttestationTest(unittest.TestCase):
 
         resolver.add_metadata(newer)
 
-        cert = X509.load_cert_der_string(ATTESTATION_CERT)
+        cert = x509.load_der_x509_certificate(
+            ATTESTATION_CERT, backend=default_backend()
+        )
         metadata = resolver.resolve(cert)
 
         assert metadata.identifier == '2fb54029-7613-4f1d-94f1-fb876c14a6fe'

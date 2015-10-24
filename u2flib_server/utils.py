@@ -25,8 +25,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
-from M2Crypto import EC, Rand
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from hashlib import sha256
 import os
@@ -36,7 +37,9 @@ PUB_KEY_DER_PREFIX = "3059301306072a8648ce3d020106082a8648ce3d030107034200" \
 
 
 def pub_key_from_der(der):
-    return EC.pub_key_from_der(PUB_KEY_DER_PREFIX + der)
+    return serialization.load_der_public_key(
+        PUB_KEY_DER_PREFIX + der, backend=default_backend()
+    )
 
 
 def websafe_decode(data):
@@ -56,8 +59,5 @@ def sha_256(data):
     return h.digest()
 
 
-Rand.rand_seed(os.urandom(1024))
-
-
 def rand_bytes(n_bytes):
-    return Rand.rand_bytes(n_bytes)
+    return os.urandom(n_bytes)

@@ -27,7 +27,9 @@
 
 __all__ = ['MetadataResolver', 'create_resolver']
 
-from M2Crypto import X509
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
 from u2flib_server.jsapi import MetadataObject
 from u2flib_server.attestation.data import YUBICO
 import os
@@ -62,15 +64,17 @@ class MetadataResolver(object):
     def _index(self, metadata):
         for cert_pem in metadata.trustedCertificates:
             cert_der = ''.join(cert_pem.splitlines()[1:-1]).decode('base64')
-            cert = X509.load_cert_der_string(cert_der)
-            subject = cert.get_subject().as_text()
+            cert = x509.load_der_x509_certificate(
+                cert_der, backend=default_backend()
+            )
+            subject = cert.subject
             if subject not in self._certs:
                 self._certs[subject] = []
             self._certs[subject].append(cert)
             self._metadata[cert] = metadata
 
     def resolve(self, cert):
-        for issuer in self._certs.get(cert.get_issuer().as_text(), []):
+        for issuer in self._certs.get(cert.issuer, []):
             if cert.verify(issuer.get_pubkey()) == 1:
                 return self._metadata[issuer]
         return None
